@@ -1,9 +1,7 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
-
 from database import Base
-
 
 
 class Gene(Base):
@@ -14,7 +12,6 @@ class Gene(Base):
     geneset_id = Column(Integer, ForeignKey("genesets.id"))
 
     geneset = relationship("Geneset", back_populates="genes")
-
 
 
 class Geneset(Base):
