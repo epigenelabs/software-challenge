@@ -1,72 +1,3 @@
-# Software Challenge
-
-Welcome to Epigene Labs' Engineering Challenge. The goal of this challenge is to have some material for a following discussion with our engineers. Thus, we will pay special attention to a code that:
-
-- can evolve easily; 
-- is clean and robust;
-- on which we can easily onboard new developers;
-- is tested;
-
-## How to proceed ?
-
-1. Clone the repo (don't fork it) and create your own repo with the code;
-2. Select the track you prefer (🐍 is more backend oriented, 🌈 is more frontend oriented), or feel more confortable with;
-3. Resolve issues one by one of the selected track only (try to have the clearest commit history as possible)
-4. Once you are done, send an email to benjamin@epigenelabs.com, we will organize a meeting afterward.
-
-⚠️ We don't expect you to spend more than 1 to 4 hours in that challenge, and don't expect you to finish the challenge as well.
-
-The interview will be the opportunity for you to expose your solution to the challenge you picked, but also an opportunity to learn more about Epigene Labs, and to meet more engineers. For us, the most important aspect will be to evaluate how much we could work together as a team. 
-
-Also, do not hesitate to suggest some improvements for this test, we remain a very young start up and will love to hear your feedback. 
-
-## Repository description
-
-There is a `backend` folder where you will find a FastAPI python app. The App allows a user to manage what we call a Geneset, which is basically a list of known Genes that, put together, have a particular meaning or a particular impact on a specific protein, disease.
-
-The API allows the user to create a Geneset, create some Genes, and add genes to a particular Genesets.
-
-## Install and run the API
-
-The following should be run under `/backend` folder.
-
-### 1 - Install python
-
-Install `python 3.8` with [pyenv](https://github.com/pyenv/pyenv)
-
-```
-brew install pyenv
-pyenv install 3.8.0
-pyenv local 3.8.0
-```
-
-Copy/paste at the following command at the end of your `.zshrc` or `.bash_rc`
-
-```bash
-eval "$(pyenv init -)"
-```
-### 2 - Install poetry
-
-We need to install [poetry](https://python-poetry.org/docs/#installation) to manage python dependencies.
-
-You can make sure poetry is correctly installed by running 
-
-````
-poetry --version
-````
-
-Then, install dependencies `poetry install`.
-
-
-### 3 - Launch
-
-
-````
-poetry run uvicorn main:app --reload
-````
-
-You should now have an API running locally on port `8000`. The documentation of that API should be available at `localhost:8000/docs`
-
 ## 🐍 Track Backend
 
 In that track, we will explore the API and try to improve it.
@@ -77,11 +8,35 @@ Make sure you can query the API. We use Postman at Epigene Labs, but feel free t
 
 Create a couple of Genesets to get more familiar with it. 
 
+---
+> Answer
+
+In Postman, set the URL as `http://127.0.0.1:8000/genesets`, and the method as `POST`, and put the dict below in the body as JSON format.
+```
+{
+    "title": "test_geneset_title",
+    "genes": [
+        {
+            "name": "test_gene_name1"
+        },
+        {
+            "name": "test_gene_name2"
+        }
+    ]
+}
+```
+
 ### Level 1
 
 Now as a user, let's say you want to retrieve a gene based on its name, and know in which genesets it is present. 
 
 Update the API so that we can deliver that new feature.
+
+---
+> Answer
+
+In `crud.py`, write functions `get_genes` and `get_gene_by_name` to perform SQL queries from db to retrieve corredsponding data. 
+Then, in `main.py`, write functions `read_all_genes` and `read_match_genes` as `GET` method to render the data from `crud.py`. Note the data structure of response data is `list`.
 
 ### Level 2
 
@@ -89,6 +44,11 @@ Sometimes, users don't know the specific name of a gene. They might not be able 
 
 Update the API with a way to allow a user to search for genes.
 
+---
+> Answer
+
+We can either apply approximate matching in SQL query, using `LIKE`, or suggest the users to search a specific gene by its `id`.
+To search by `id`, do the same as previous step, write SQL query in `crud.py` and render in with a function in `main.py`. Note the data structure of repsonse data now is `dict`, a single gene item.
 
 ### Level 3
 
@@ -107,37 +67,28 @@ Let's check again the endpoint that allow a user to retrieves the full list of g
 
 Suggest a way to improve it.
 
+---
+> Answer
+
+If I'm not mistaken, the output doesn't become much slower. I checked `populate.py`, the script seemed only to scale the data in db, not to scale the users or client calls.
+
+To simulate the concurrent calls, I've added client side multiproccessing, multithreading and async scripts to call the api. Theoretically, they should be a lot faster than regular synchronous calls, but I don't know why they are not as fast as I expected. But you can get my ideas, and do it on the server side, so they can respond to massive calls concurrently.
+
+Besides, pagination and caching are alternatives to reduce single response time. This should be the simplest way.
+
+Ultimately, we can create server clusters, which should be more complicated and unfortunately I have no experience at the moment.
+
 ### Level 4 - Bonus
 
 Let's be real, this API isn't best in class. How do you think we could improve it ?
 
 The idea here is not to implement any solution. Just think of some improvements we could discuss during the interview.
 
+---
+> Answer
 
-## 🌈 Track Frontend 
-
-In that track, we will create an application that consumes the existing API.
-
-### Level 0
-
-Make sure you can query the API. We use Postman at Epigene Labs, but feel free to use the tool you want.
-
-Create a couple of Genesets to get more familiar with it. 
-
-### Level 1
-
-Set up a React App from scratch. That retrieves and displays the list of genesets available. The user should be able to see the list of genesets with the geneset's title and the list of genes inside it.
-
-### Level 2
-
-Add an interface where a user can create a geneset, with a list of genes.
-
-### Level 3
-
-Unfortunately, the API doesn't prevent a user from creating a geneset with a uniq set of genes (ie we could have two identic genes in a geneset). 
-
-Suggest a way for a user to display duplicate within a geneset.
-
-### Level 4 - Bonus
-
-We are missing one last step for a usable App which is the update of a geneset. Use the API, and suggest an interface to update a geneset with two actions (1) Update the title (2) Remove a gene from the geneset. 
+1. The search endpoints can be better. Already marked in the code.
+2. If they're open to external partners, we need authentication as a middleware, or even different authorizations for different users.
+3. I imagine gene data can be complicated and contain many attributes, so, we can break down users' needs and only respond with necessary data for each request.
+4. Use connection pooling. It's like caching. Caching lowers the latency by avoiding repeated calls to endpoints; connection pooling do it by avoiding frequent visits to db.
+5. Add a logging in case we further need to analyze the requests.
